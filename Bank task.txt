@@ -1,0 +1,284 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class Program
+{
+    static void Main(string[] args)
+    {
+        var bank = new Bank
+        {
+            Name = "Sample Bank",
+            Budget = 1000000
+        };
+
+        var ceo = new CEO
+        {
+            GUID = Guid.NewGuid(),
+            Name = "John",
+            Surname = "Doe",
+            Age = 45,
+            Position = "CEO",
+            Salary = 150000
+        };
+        bank.BankCEO = ceo;
+
+        var worker1 = new Worker
+        {
+            GUID = Guid.NewGuid(),
+            Name = "Alice",
+            Surname = "Smith",
+            Age = 28,
+            Position = "Worker",
+            Salary = 50000,
+            StartTime = DateTime.Now.AddYears(-2),
+            EndTime = DateTime.Now.AddYears(2)
+        };
+
+        var worker2 = new Worker
+        {
+            GUID = Guid.NewGuid(),
+            Name = "Bob",
+            Surname = "Johnson",
+            Age = 32,
+            Position = "Worker",
+            Salary = 55000,
+            StartTime = DateTime.Now.AddYears(-3),
+            EndTime = DateTime.Now.AddYears(1)
+        };
+
+        bank.Workers = new List<Worker> { worker1, worker2 };
+
+        var manager1 = new Manager
+        {
+            GUID = Guid.NewGuid(),
+            Name = "Eve",
+            Surname = "Williams",
+            Age = 40,
+            Position = "Manager",
+            Salary = 75000
+        };
+
+        bank.Managers = new List<Manager> { manager1 };
+
+        var client1 = new Client
+        {
+            GUID = Guid.NewGuid(),
+            Name = "Client",
+            Surname = "One",
+            Age = 35,
+            LiveAddress = "123 Main St",
+            WorkAddress = "456 Business Ave",
+            Salary = 75000
+        };
+
+        var client2 = new Client
+        {
+            GUID = Guid.NewGuid(),
+            Name = "Client",
+            Surname = "Two",
+            Age = 28,
+            LiveAddress = "789 Elm Rd",
+            WorkAddress = "101 Tech Park",
+            Salary = 60000
+        };
+
+        bank.Clients = new List<Client> { client1, client2 };
+
+        var operation1 = new Operation
+        {
+            GUID = Guid.NewGuid(),
+            ProcessName = "Credit Operation",
+            DateTime = DateTime.Now
+        };
+
+        var operation2 = new Operation
+        {
+            GUID = Guid.NewGuid(),
+            ProcessName = "Loan Operation",
+            DateTime = DateTime.Now.AddHours(1)
+        };
+
+        worker1.AddOperation(operation1);
+        worker2.AddOperation(operation2);
+
+        var credit1 = new Credit
+        {
+            GUID = Guid.NewGuid(),
+            Client = client1,
+            Amount = 50000,
+            Percent = 5,
+            Months = 12
+        };
+
+        var credit2 = new Credit
+        {
+            GUID = Guid.NewGuid(),
+            Client = client2,
+            Amount = 60000,
+            Percent = 4.5m,
+            Months = 24
+        };
+
+        client1.Credits = new List<Credit> { credit1 };
+        client2.Credits = new List<Credit> { credit2 };
+
+        bank.ShowClientCredit("Client One");
+        bank.ShowClientCredit("Client Two");
+
+        bank.PayCredit(client1, 10000);
+
+        bank.ShowAllCredit();
+
+        decimal profit = bank.CalculateProfit();
+        Console.WriteLine($"Bank Profit: {profit:C}");
+    }
+}
+
+public class Bank
+{
+    public string Name { get; set; }
+    public decimal Budget { get; set; }
+    public decimal Profit { get; set; }
+    public CEO BankCEO { get; set; }
+    public List<Worker> Workers { get; set; }
+    public List<Manager> Managers { get; set; }
+    public List<Client> Clients { get; set; }
+
+    public decimal CalculateProfit()
+    {
+        decimal totalSalaries = Workers.Sum(w => w.Salary) + Managers.Sum(m => m.Salary);
+        Profit = Budget - totalSalaries;
+        return Profit;
+    }
+
+    public void ShowClientCredit(string fullName)
+    {
+        var client = Clients.FirstOrDefault(c => $"{c.Name} {c.Surname}" == fullName);
+        if (client != null)
+        {
+            Console.WriteLine($"Client: {fullName}");
+            foreach (var credit in client.Credits)
+            {
+                Console.WriteLine($"Credit Amount: {credit.Amount}, Months: {credit.Months}");
+            }
+        }
+    }
+
+    public void PayCredit(Client client, decimal money)
+    {
+        foreach (var credit in client.Credits)
+        {
+            if (money >= credit.CalculateRemainingAmount())
+            {
+                money -= credit.CalculateRemainingAmount();
+                credit.Payment(credit.CalculateRemainingAmount());
+            }
+            else
+            {
+                credit.Payment(money);
+                break;
+            }
+        }
+    }
+
+    public void ShowAllCredit()
+    {
+        foreach (var client in Clients)
+        {
+            Console.WriteLine($"Client: {client.Name} {client.Surname}");
+            foreach (var credit in client.Credits)
+            {
+                Console.WriteLine($"Credit Amount: {credit.Amount}, Months: {credit.Months}");
+            }
+        }
+    }
+}
+
+public class CEO
+{
+    public Guid GUID { get; set; }
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public int Age { get; set; }
+    public string Position { get; set; }
+    public decimal Salary { get; set; }
+
+}
+
+public class Worker
+{
+    public Guid GUID { get; set; }
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public int Age { get; set; }
+    public string Position { get; set; }
+    public decimal Salary { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public List<Operation> Operations { get; set; } = new List<Operation>(); 
+
+    public void AddOperation(Operation operation)
+    {
+        Operations.Add(operation);
+    }
+}
+
+public class Manager
+{
+    public Guid GUID { get; set; }
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public int Age { get; set; }
+    public string Position { get; set; }
+    public decimal Salary { get; set; }
+
+}
+
+public class Operation
+{
+    public Guid GUID { get; set; }
+    public string ProcessName { get; set; }
+    public DateTime DateTime { get; set; }
+}
+
+public class Credit
+{
+    public Guid GUID { get; set; }
+    public Client Client { get; set; }
+    public decimal Amount { get; set; }
+    public decimal Percent { get; set; }
+    public int Months { get; set; }
+    public List<Payment> Payments { get; set; } = new List<Payment>();
+
+    public decimal CalculateRemainingAmount()
+    {
+        return Amount - Payments.Sum(p => p.Amount);
+    }
+
+    public void Payment(decimal money)
+    {
+        if (money > 0)
+        {
+            Payments.Add(new Payment { Amount = money, DateTime = DateTime.Now });
+        }
+    }
+}
+
+public class Payment
+{
+    public decimal Amount { get; set; }
+    public DateTime DateTime { get; set; }
+}
+
+public class Client
+{
+    public Guid GUID { get; set; }
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public int Age { get; set; }
+    public string LiveAddress { get; set; }
+    public string WorkAddress { get; set; }
+    public decimal Salary { get; set; }
+    public List<Credit> Credits { get; set; } = new List<Credit>();
+}
